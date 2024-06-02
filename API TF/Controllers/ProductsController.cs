@@ -13,6 +13,9 @@ using System.Collections.Generic;
 
 namespace API_TF.Controllers
 {
+    /// <summary>
+    /// Controlador para gerenciar os Produtos.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class ProductsController : Controller
@@ -26,6 +29,7 @@ namespace API_TF.Controllers
             _service = service;
             _validatorUpProduct = validatorUpProduct;
         }
+        
 
         /// <summary>
         /// Adicionar um novo Produto.
@@ -56,6 +60,7 @@ namespace API_TF.Controllers
             }
         }
 
+
         /// <summary>
         /// Obtém um Produto com base no BARCODE.
         /// </summary>
@@ -84,6 +89,7 @@ namespace API_TF.Controllers
                 };
             }
         }
+
 
         /// <summary>
         /// Atualiza um produto existente.
@@ -127,6 +133,7 @@ namespace API_TF.Controllers
             }
         }
 
+
         /// <summary>
         /// Atualiza o estoque de um produto pelo ID.
         /// </summary>
@@ -169,6 +176,7 @@ namespace API_TF.Controllers
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
+
 
         /// <summary>
         /// Obtém produtos com base na descrição.

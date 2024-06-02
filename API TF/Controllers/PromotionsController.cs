@@ -9,6 +9,9 @@ using System.Collections.Generic;
 
 namespace API_TF.Controllers
 {
+    /// <summary>
+    /// Controlador para gerenciar as Promoções.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class PromotionsController : Controller
@@ -19,6 +22,7 @@ namespace API_TF.Controllers
         {
             _service = service;
         }
+
 
         /// <summary>
         /// Adiciona uma nova promoção.
@@ -49,6 +53,7 @@ namespace API_TF.Controllers
             }
         }
 
+
         /// <summary>
         /// Atualiza uma promoção existente.
         /// </summary>
@@ -75,6 +80,7 @@ namespace API_TF.Controllers
                 return BadRequest(e.Message);
             }
         }
+
 
         /// <summary>
         /// Busca todas as promoções de um produto em um determinado período.

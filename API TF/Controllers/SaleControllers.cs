@@ -12,7 +12,7 @@ using System.Collections.Generic;
 namespace API_TF.Controllers
 {
     /// <summary>
-    /// Controlador para gerenciar as vendas.
+    /// Controlador para gerenciar as Vendas.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]

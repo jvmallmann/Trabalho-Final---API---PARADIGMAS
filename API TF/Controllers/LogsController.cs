@@ -9,6 +9,9 @@ using System.Collections.Generic;
 
 namespace API_TF.Controllers
 {
+    /// <summary>
+    /// Controlador para gerenciar os Logs.
+    /// </summary>
     [Route("api/[controller]")]
     [ApiController]
     public class LogsController : ControllerBase
