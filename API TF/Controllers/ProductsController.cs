@@ -2,8 +2,6 @@
 using API_TF.Services;
 using API_TF.Services.DTOs;
 using API_TF.Services.Exceptions;
-using API_TF.Services.Validate;
-using ApiWebDB.Services.Exceptions;
 using FluentValidation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
@@ -22,12 +20,14 @@ namespace API_TF.Controllers
     {
         private readonly ProductService _service;
         public readonly IValidator<ProductUpDTO> _validatorUpProduct;
+        private readonly ILogger _logger;
 
 
-        public ProductsController(ProductService service, IValidator<ProductUpDTO> validatorUpProduct)
+        public ProductsController(ProductService service, IValidator<ProductUpDTO> validatorUpProduct, ILogger<ProductsController> logger)
         {
             _service = service;
             _validatorUpProduct = validatorUpProduct;
+            _logger = logger;
         }
         
 
@@ -56,6 +56,7 @@ namespace API_TF.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 return BadRequest(e.Message);
             }
         }
@@ -83,6 +84,7 @@ namespace API_TF.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 return new ObjectResult(new { error = e.Message })
                 {
                     StatusCode = 500
@@ -129,6 +131,7 @@ namespace API_TF.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
@@ -173,6 +176,7 @@ namespace API_TF.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }
@@ -200,6 +204,7 @@ namespace API_TF.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 return new ObjectResult(new { error = e.Message })
                 {
                     StatusCode = 500

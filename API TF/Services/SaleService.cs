@@ -16,16 +16,14 @@ namespace API_TF.Services
     public class SaleService
     {
         private readonly TfDbContext _dbCDbContext;
-        private readonly SaleDTOValidator _validator;
         private readonly PromotionService _promotionService;
         private readonly ProductService _productService;
         private readonly IMapper _mapper;
         private readonly LogService _LogService;
 
-        public SaleService(TfDbContext dbCDbContext, SaleDTOValidator validator, PromotionService promotionService, ProductService productService, IMapper mapper, LogService LogService)
+        public SaleService(TfDbContext dbCDbContext, PromotionService promotionService, ProductService productService, IMapper mapper, LogService LogService)
         {
             _dbCDbContext = dbCDbContext;
-            _validator = validator;
             _promotionService = promotionService;
             _productService = productService;
             _mapper = mapper;

@@ -2,8 +2,8 @@
 using API_TF.Services;
 using API_TF.Services.DTOs;
 using API_TF.Services.Exceptions;
-using ApiWebDB.Services.Exceptions;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 
@@ -17,10 +17,12 @@ namespace API_TF.Controllers
     public class PromotionsController : Controller
     {
         private readonly PromotionService _service;
+        private readonly ILogger _logger;
 
-        public PromotionsController(PromotionService service)
+        public PromotionsController(PromotionService service, ILogger<PromotionsController> logger)
         {
             _service = service;
+            _logger = logger;
         }
 
 
@@ -49,6 +51,7 @@ namespace API_TF.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 return BadRequest(e.Message);
             }
         }
@@ -77,6 +80,7 @@ namespace API_TF.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 return BadRequest(e.Message);
             }
         }
@@ -90,6 +94,7 @@ namespace API_TF.Controllers
         /// <param name="endDate">Data de fim do período.</param>
         /// <returns>Lista de promoções.</returns>
         /// <response code="200">Retorna a lista de promoções.</response>
+        /// <response code="400">Indica que os dados fornecidos são inválidos.</response>
         /// <response code="404">Se nenhuma promoção for encontrada para o período especificado.</response>
         /// <response code="500">Se ocorrer um erro inesperado.</response>
         [HttpGet("product/{productId}/period")]
@@ -97,7 +102,13 @@ namespace API_TF.Controllers
         {
             try
             {
+                if (startDate == default(DateTime) || endDate == default(DateTime))
+                {
+                    return BadRequest("A data de início e a data de fim não podem ser vazias.");
+                }
+
                 var entity = _service.GetPromotionsByProductAndPeriod(productId, startDate, endDate);
+
                 return Ok(entity);
             }
             catch (NotFoundException e)
@@ -106,6 +117,7 @@ namespace API_TF.Controllers
             }
             catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 return new ObjectResult(new { error = e.Message })
                 {
                     StatusCode = 500

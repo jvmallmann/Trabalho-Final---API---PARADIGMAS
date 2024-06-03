@@ -5,7 +5,6 @@ using API_TF.Services.Exceptions;
 using API_TF.Services.Validate;
 using AutoMapper;
 using FluentValidation;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;

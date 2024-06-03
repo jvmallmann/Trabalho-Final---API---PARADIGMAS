@@ -1,9 +1,9 @@
-﻿using API_TF.DataBase.Models;
-using API_TF.Services;
+﻿using API_TF.Services;
 using API_TF.Services.DTOs;
 using API_TF.Services.Exceptions;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
 
@@ -17,10 +17,12 @@ namespace API_TF.Controllers
     public class LogsController : ControllerBase
     {
         private readonly LogService _logService;
+        private readonly ILogger _logger;
 
-        public LogsController(LogService logService)
+        public LogsController(LogService logService, ILogger<LogsController> logger)
         {
             _logService = logService;
+            _logger = logger;
         }
 
         /// <summary>
@@ -45,6 +47,7 @@ namespace API_TF.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
 

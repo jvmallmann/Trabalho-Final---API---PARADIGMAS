@@ -3,7 +3,6 @@ using API_TF.DataBase.Models;
 using API_TF.Services.DTOs;
 using API_TF.Services.Exceptions;
 using AutoMapper;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -20,6 +19,7 @@ namespace API_TF.Services
             _mapper = mapper;
         }
 
+
         public TbStockLog InsertLog(StockLogDTO dto)
         {
             var entity = _mapper.Map<TbStockLog>(dto);
@@ -28,6 +28,7 @@ namespace API_TF.Services
             _dbCDbContext.SaveChanges();
             return entity;
         }
+
 
         public List<StockResultLogDTO> GetLogsByProduct(int productId)
         {

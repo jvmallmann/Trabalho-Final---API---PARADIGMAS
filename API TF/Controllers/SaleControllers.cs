@@ -1,13 +1,12 @@
 ﻿using API_TF.DataBase.Models;
 using API_TF.Services.DTOs;
 using API_TF.Services;
-using ApiWebDB.Services.Exceptions;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using API_TF.Services.Exceptions;
 using FluentValidation;
-using System.ComponentModel.DataAnnotations;
 using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 
 namespace API_TF.Controllers
 {
@@ -20,12 +19,13 @@ namespace API_TF.Controllers
     {
         private readonly SaleService _service;
         public readonly IValidator<SaleDTO> _validator;
+        private readonly ILogger _logger;
 
-        public SalesController(SaleService service, IValidator<SaleDTO> validator)
+        public SalesController(SaleService service, IValidator<SaleDTO> validator, ILogger<SalesController> logger)
         {
             _service = service;
             _validator = validator;
-
+            _logger = logger;
         }
 
 
@@ -69,6 +69,7 @@ namespace API_TF.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return StatusCode(500, "Erro interno no servidor: " + ex.Message);
             }
         }
@@ -95,8 +96,9 @@ namespace API_TF.Controllers
             {
                 return NotFound(E.Message);
             }
-            catch (System.Exception e)
+            catch (Exception e)
             {
+                _logger.LogError(e.Message);
                 return new ObjectResult(new { error = e.Message })
                 {
                     StatusCode = 500
@@ -135,6 +137,7 @@ namespace API_TF.Controllers
             }
             catch (Exception ex)
             {
+                _logger.LogError(ex.Message);
                 return StatusCode(500, "Internal server error: " + ex.Message);
             }
         }
