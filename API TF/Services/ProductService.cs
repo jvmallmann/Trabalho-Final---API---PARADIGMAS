@@ -82,9 +82,7 @@ namespace API_TF.Services
 
         public IEnumerable<TbProduct> GetByDescription(string description)
         {
-            var existingEntities = _dbCDbContext.TbProducts
-                                                 .Where(c => c.Description.Contains(description))
-                                                 .ToList();
+            var existingEntities = _dbCDbContext.TbProducts.Where(c => c.Description.Contains(description)).ToList();
 
             if (existingEntities == null || existingEntities.Count == 0)
             {

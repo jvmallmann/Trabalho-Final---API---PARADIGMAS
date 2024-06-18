@@ -39,9 +39,7 @@ namespace API_TF.Services
                 throw new NotFoundException("Produto não encontrado.");
             }
 
-            var logs = from log in _dbCDbContext.TbStockLogs
-                       where log.Productid == productId
-                       select new StockResultLogDTO
+            var logs = from log in _dbCDbContext.TbStockLogs where log.Productid == productId select new StockResultLogDTO
                        {
                            Date = log.Createdat,
                            Barcode = log.Product.Barcode,

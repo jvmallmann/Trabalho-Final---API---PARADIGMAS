@@ -116,9 +116,7 @@ namespace API_TF.Services
 
         public TbSale GetSaleByCode(string code)
         {
-            var sale = _dbCDbContext.TbSales
-                .Include(s => s.Product)
-                .FirstOrDefault(s => s.Code == code);
+            var sale = _dbCDbContext.TbSales.Include(s => s.Product).FirstOrDefault(s => s.Code == code);
 
             if (sale == null)
             {
@@ -137,8 +135,7 @@ namespace API_TF.Services
                 throw new BadRequestException("As datas de início e fim são obrigatórias.");
             }
 
-            var query = from sale in _dbCDbContext.TbSales join product in _dbCDbContext.TbProducts on sale.Productid equals product.Id
-                        where sale.Createat >= startDate && sale.Createat < endDate.AddDays(1) select new SalesReportDTO
+            var query = from sale in _dbCDbContext.TbSales join product in _dbCDbContext.TbProducts on sale.Productid equals product.Id where sale.Createat >= startDate && sale.Createat < endDate.AddDays(1) select new SalesReportDTO
                         {
                             SaleCode = sale.Code,
                             ProductDescription = product.Description,

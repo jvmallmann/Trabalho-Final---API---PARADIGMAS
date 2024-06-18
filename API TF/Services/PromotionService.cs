@@ -108,18 +108,14 @@ namespace API_TF.Services
             var currentDate = DateTime.Now;
 
             return _dbCDbContext.TbPromotions
-                     .Where(p => p.Productid == productId
-                                 && p.Startdate <= currentDate
-                                 && p.Enddate >= currentDate)
-                     .OrderByDescending(p => p.Enddate)
-                     .ThenByDescending(p => p.Startdate)
-                     .ToList();
+                     .Where(p => p.Productid == productId && p.Startdate <= currentDate && p.Enddate >= currentDate).OrderByDescending(p => p.Enddate).ThenByDescending(p => p.Startdate).ToList();
         }
 
 
         private void ValidatePromotion(PromotionDTO dto)
         {
             var validationResult = _validator.Validate(dto);
+
             if (!validationResult.IsValid)
             {
                 var errorMessages = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
