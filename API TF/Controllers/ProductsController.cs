@@ -12,7 +12,7 @@ using System.Collections.Generic;
 namespace API_TF.Controllers
 {
     /// <summary>
-    /// Controlador para gerenciar os Produtos.
+    /// Controlador que gerencia os Produtos.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
@@ -29,16 +29,16 @@ namespace API_TF.Controllers
             _validatorUpProduct = validatorUpProduct;
             _logger = logger;
         }
-        
+
 
         /// <summary>
         /// Adicionar um novo Produto.
         /// </summary>
         /// <param name="product">O Produto a ser inserido.</param>
         /// <returns>O Produto inserido com sucesso.</returns>
-        /// <response code="200">Indica que o produto foi inserido com sucesso.</response>
-        /// <response code="422">Indica que os dados são inválidos.</response>
-        /// <response code="400">Indica que ocorreu um erro ao tentar inserir o produto.</response>
+        /// <response code="201">Indica que o produto foi inserido com sucesso.</response>
+        /// <response code="400">Indica que os dados são inválidos.</response>
+        /// <response code="500">Indica que ocorreu um erro interno no servidor.</response>
         [HttpPost()]
         public ActionResult<TbProduct> Insert(ProductDTO product)
         {
@@ -116,6 +116,7 @@ namespace API_TF.Controllers
                 }
 
                 var validationResult = _validatorUpProduct.Validate(product);
+
                 if (!validationResult.IsValid)
                 {
                     return BadRequest(new { Message = "Dados inválidos", Errors = validationResult.Errors });

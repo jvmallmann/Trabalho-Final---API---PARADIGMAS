@@ -43,6 +43,5 @@ public partial class TbSale
     /// Valor de desconto unitário (Valor em reais)
     /// </summary>
     public decimal Discount { get; set; }
-    [JsonIgnore]
     public virtual TbProduct Product { get; set; }
 }

@@ -7,11 +7,13 @@ using API_TF.Services.Exceptions;
 using FluentValidation;
 using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using System.Linq;
+using ApiWebDB.Services.Exceptions;
 
 namespace API_TF.Controllers
 {
     /// <summary>
-    /// Controlador para gerenciar as Vendas.
+    /// Controlador que gerencia as Vendas.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
@@ -34,31 +36,27 @@ namespace API_TF.Controllers
         /// </summary>
         /// <param name="sale">A venda a ser inserida</param>
         /// <returns>A venda inserida.</returns>
-        /// <response code="200">Indica que a venda foi inserida com sucesso.</response>
         /// <response code="400">Indica que houve um erro de validação nos dados da venda ou que o estoque é insuficiente.</response>
         /// <response code="404">Indica que o produto com o ID especificado não foi encontrado.</response>
         /// <response code="422">Indica que os dados são inválidos.</response>
         /// <response code="500">Indica que ocorreu um erro interno no servidor.</response>
         /// 
         [HttpPost()]
-        public ActionResult<TbSale> Insert(SaleDTO sale)
+        [ProducesResponseType(typeof(TbSale), 201)]
+        public IActionResult Insert([FromBody] List<SaleDTO> sale)
         {
             try
             {
-                var validationResult = _validator.Validate(sale);
-
-                if (!validationResult.IsValid)
-                {
-                    return BadRequest(validationResult.Errors);
-                }
-
                 var entity = _service.Insert(sale);
-                return Ok(entity);
+
+                return CreatedAtAction(nameof(Insert), null, entity);
             }
-            catch (InvalidEntity ex)
+            catch (InvalidDataException ex)
             {
-                return BadRequest(ex.Message);
+                var errors = ex.ValidationErrors.Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { Message = "Dados inválidos", Errors = errors });
             }
+
             catch (InsufficientStockException ex)
             {
                 return BadRequest(ex.Message);
@@ -73,7 +71,6 @@ namespace API_TF.Controllers
                 return StatusCode(500, "Erro interno no servidor: " + ex.Message);
             }
         }
-
 
         /// <summary>
         /// Busca uma venda pelo código da venda.
@@ -120,16 +117,14 @@ namespace API_TF.Controllers
         [HttpGet("report")]
         public ActionResult<List<SalesReportDTO>> GetSalesReport(DateTime startDate, DateTime endDate)
         {
-
-            if (startDate == default || endDate == default)
-            {
-                return BadRequest("As datas de início e fim são obrigatórias.");
-            }
-
             try
             {
                 var report = _service.GetSalesReportByPeriod(startDate, endDate);
                 return Ok(report);
+            }
+            catch (BadRequestException ex)
+            {
+                return BadRequest(ex.Message);
             }
             catch (NotFoundException ex)
             {

@@ -2,15 +2,18 @@
 using API_TF.Services;
 using API_TF.Services.DTOs;
 using API_TF.Services.Exceptions;
+using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.HttpResults;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Collections.Generic;
+using System.Linq;
 
 namespace API_TF.Controllers
 {
     /// <summary>
-    /// Controlador para gerenciar as Promoções.
+    /// Controlador que gerencia as Promoções.
     /// </summary>
     [Route("api/[controller]")]
     [ApiController]
@@ -31,28 +34,34 @@ namespace API_TF.Controllers
         /// </summary>
         /// <param name="promo">O DTO da promoção a ser inserida.</param>
         /// <returns>A promoção inserida.</returns>
-        /// <response code="200">Retorna a promoção inserida.</response>
-        /// <response code="422">Se a validação da entidade falhar.</response>
-        /// <response code="400">Se ocorrer um erro inesperado.</response>
+        /// <response code="201">Indica que a promoção foi inserida com sucesso.</response>
+        /// <response code="400">Indica que os dados fornecidos são inválidos.</response>
+        /// <response code="404">Indica que o id do produto passado não existe.</response>
+        /// <response code="500">Indica que ocorreu um erro interno no servidor.</response>
         [HttpPost]
+        [ProducesResponseType(typeof(TbPromotion), 201)]
+        [ProducesResponseType(500)]
         public ActionResult<TbPromotion> Insert(PromotionDTO promo)
         {
             try
             {
                 var entity = _service.Insert(promo);
-                return Ok(entity);
+                return CreatedAtAction(nameof(Insert), new { id = entity.Id }, entity);
             }
-            catch (InvalidEntity e)
+            catch (InvalidDataException ex)
             {
-                return new ObjectResult(new { error = e.Message })
-                {
-                    StatusCode = 422
-                };
+                var errors = ex.ValidationErrors.Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { Message = "Dados inválidos", Errors = errors });
             }
-            catch (Exception e)
+            catch (NotFoundException ex)
             {
-                _logger.LogError(e.Message);
-                return BadRequest(e.Message);
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+
+                return StatusCode(500, ex.Message);
             }
         }
 
@@ -63,9 +72,10 @@ namespace API_TF.Controllers
         /// <param name="id">O ID da promoção a ser atualizada.</param>
         /// <param name="promo">O DTO da promoção com os dados atualizados.</param>
         /// <returns>A promoção atualizada.</returns>
-        /// <response code="200">Retorna a promoção atualizada.</response>
-        /// <response code="404">Se a promoção com o ID especificado não for encontrada.</response>
-        /// <response code="400">Se ocorrer um erro inesperado.</response>
+        /// <response code="200">Indica que a promoção foi atualizada com sucesso.</response>
+        /// <response code="400">Indica que os dados fornecidos são inválidos.</response>
+        /// <response code="404">Indica que a promoção com o ID especificado não foi encontrada ou o ID do produto não existe.</response>
+        /// <response code="500">Indica que ocorreu um erro interno no servidor.</response>
         [HttpPatch("{id}")]
         public ActionResult<TbPromotion> Update(int id, PromotionDTO promo)
         {
@@ -74,14 +84,19 @@ namespace API_TF.Controllers
                 var entity = _service.Update(promo, id);
                 return Ok(entity);
             }
-            catch (NotFoundException e)
+            catch (InvalidDataException ex)
             {
-                return NotFound(e.Message);
+                var errors = ex.ValidationErrors.Select(e => e.ErrorMessage).ToList();
+                return BadRequest(new { Message = "Dados inválidos", Errors = errors });
+            }
+            catch (NotFoundException ex)
+            {
+                return NotFound(ex.Message);
             }
             catch (Exception e)
             {
                 _logger.LogError(e.Message);
-                return BadRequest(e.Message);
+                return StatusCode(StatusCodes.Status500InternalServerError, e.Message);
             }
         }
 
@@ -93,35 +108,31 @@ namespace API_TF.Controllers
         /// <param name="startDate">Data de início do período.</param>
         /// <param name="endDate">Data de fim do período.</param>
         /// <returns>Lista de promoções.</returns>
-        /// <response code="200">Retorna a lista de promoções.</response>
+        /// <response code="200">Indica que a busca foi realizada com sucesso.</response>
         /// <response code="400">Indica que os dados fornecidos são inválidos.</response>
-        /// <response code="404">Se nenhuma promoção for encontrada para o período especificado.</response>
-        /// <response code="500">Se ocorrer um erro inesperado.</response>
+        /// <response code="404">Indica que o ID do produto não foi encontrado ou nenhuma promoção foi encontrada para o período especificado.</response>
+        /// <response code="500">Indica que ocorreu um erro interno no servidor.</response>
         [HttpGet("product/{productId}/period")]
         public ActionResult<IEnumerable<TbPromotion>> GetPromotionsByProductAndPeriod(int productId, DateTime startDate, DateTime endDate)
         {
             try
             {
-                if (startDate == default(DateTime) || endDate == default(DateTime))
-                {
-                    return BadRequest("A data de início e a data de fim não podem ser vazias.");
-                }
-
                 var entity = _service.GetPromotionsByProductAndPeriod(productId, startDate, endDate);
-
                 return Ok(entity);
             }
-            catch (NotFoundException e)
+            catch (InvalidEntity ex)
             {
-                return NotFound(e.Message);
+                return BadRequest(ex.Message);
             }
-            catch (Exception e)
+            catch (NotFoundException ex)
             {
-                _logger.LogError(e.Message);
-                return new ObjectResult(new { error = e.Message })
-                {
-                    StatusCode = 500
-                };
+                return NotFound(ex.Message);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex.Message);
+
+                return StatusCode(500, ex.Message);
             }
         }
     }

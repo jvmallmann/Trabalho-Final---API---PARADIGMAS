@@ -7,6 +7,7 @@ using FluentValidation;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using Microsoft.EntityFrameworkCore;
 
 namespace API_TF.Services
 {
@@ -26,9 +27,23 @@ namespace API_TF.Services
 
         public TbPromotion Insert(PromotionDTO dto)
         {
-            ValidatePromotion(dto);
+            var validationResult = _validator.Validate(dto);
+            if (!validationResult.IsValid)
+            {
+                var errorMessages = string.Join(", ", validationResult.Errors.Select(e => e.ErrorMessage));
+                throw new InvalidDataException("Dados inválidos", validationResult.Errors);
+            }
+
+            var productExists = _dbCDbContext.TbProducts.Any(p => p.Id == dto.Productid);
+            if (!productExists)
+            {
+                throw new NotFoundException("Produto não encontrado.");
+            }
 
             var entity = _mapper.Map<TbPromotion>(dto);
+
+            entity.Startdate = DateTime.SpecifyKind(dto.Startdate, DateTimeKind.Unspecified);
+            entity.Enddate = DateTime.SpecifyKind(dto.Enddate, DateTimeKind.Unspecified);
 
             _dbCDbContext.Add(entity);
             _dbCDbContext.SaveChanges();
@@ -51,17 +66,18 @@ namespace API_TF.Services
 
         public IEnumerable<TbPromotion> GetPromotionsByProductAndPeriod(int productId, DateTime startDate, DateTime endDate)
         {
+            if (startDate == default(DateTime) || endDate == default(DateTime))
+            {
+                throw new InvalidEntity("A data de início e a data de fim não podem ser vazias.");
+            }
+
             var productExists = _dbCDbContext.TbProducts.Any(p => p.Id == productId);
             if (!productExists)
             {
                 throw new NotFoundException("Produto não encontrado.");
             }
 
-            var promotions = _dbCDbContext.TbPromotions
-                .Where(p => p.Productid == productId &&
-                            p.Startdate >= startDate &&
-                            p.Enddate <= endDate)
-                .ToList();
+            var promotions = _dbCDbContext.TbPromotions.Where(p => p.Productid == productId && p.Startdate >= startDate && p.Enddate <= endDate).ToList();
 
             if (promotions == null || promotions.Count == 0)
             {

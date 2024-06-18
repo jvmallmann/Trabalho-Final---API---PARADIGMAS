@@ -45,8 +45,6 @@ public partial class TbProduct
     public decimal Costprice { get; set; }
 
     public virtual ICollection<TbPromotion> TbPromotions { get; set; } = new List<TbPromotion>();
-    [JsonIgnore]
     public virtual ICollection<TbSale> TbSales { get; set; } = new List<TbSale>();
-
     public virtual ICollection<TbStockLog> TbStockLogs { get; set; } = new List<TbStockLog>();
 }

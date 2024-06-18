@@ -2,13 +2,15 @@
 using API_TF.DataBase.Models;
 using API_TF.Services.DTOs;
 using API_TF.Services.Exceptions;
-using API_TF.Services.Parser;
 using API_TF.Services.Validate;
 using ApiWebDB.Services.Exceptions;
+using System.Collections.Generic;
 using AutoMapper;
+using FluentValidation;
 using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations;
 using System.Linq;
 
 namespace API_TF.Services
@@ -20,63 +22,81 @@ namespace API_TF.Services
         private readonly ProductService _productService;
         private readonly IMapper _mapper;
         private readonly LogService _LogService;
+        public readonly IValidator<SaleDTO> _validator;
 
-        public SaleService(TfDbContext dbCDbContext, PromotionService promotionService, ProductService productService, IMapper mapper, LogService LogService)
+
+        public SaleService(TfDbContext dbCDbContext, PromotionService promotionService, ProductService productService, IValidator<SaleDTO> validator, IMapper mapper, LogService LogService)
         {
             _dbCDbContext = dbCDbContext;
             _promotionService = promotionService;
             _productService = productService;
             _mapper = mapper;
             _LogService = LogService;
+            _validator = validator;
         }
 
 
-        public TbSale Insert(SaleDTO dto)
+        public IEnumerable<TbSale> Insert(List<SaleDTO> dtoList)
         {
-            var product = _productService.GetById(dto.Productid);
+            var sales = new List<TbSale>();
+            var currentTime = DateTime.Now;
+            var code = Guid.NewGuid().ToString();
 
-            if (product == null)
+            foreach (var dto in dtoList)
             {
-                throw new NotFoundException("Produto não encontrado.");
+                var validationResult = _validator.Validate(dto);
+
+                if (!validationResult.IsValid)
+                {
+                    throw new InvalidDataException("Dados inválidos", validationResult.Errors);
+                }
+
+                var product = _productService.GetById(dto.Productid);
+
+                if (product == null)
+                    throw new NotFoundException("Produto não existe");
+
+                if (product.Stock < dto.Qty)
+                    throw new InsufficientStockException("Estoque insuficiente para a movimentação");
+
+                var promotions = _promotionService.GetActivePromotions(dto.Productid);
+
+                decimal unitPrice = product.Price;
+
+                decimal originalPrice = unitPrice;
+
+                foreach (var promotion in promotions)
+                {
+                    unitPrice = ApplyPromotion(unitPrice, promotion);
+                }
+
+                decimal totalDiscount = originalPrice - unitPrice;
+
+                _productService.AjustarStock(product.Id, -dto.Qty);
+
+                var stockLogDto = new StockLogDTO
+                {
+                    Productid = dto.Productid,
+                    Qty = -dto.Qty,
+                    Createdat = DateTime.Now
+                };
+
+                _LogService.InsertLog(stockLogDto);
+
+                var sale = _mapper.Map<TbSale>(dto);
+
+                sale.Code = code;
+                sale.Price = product.Price;
+                sale.Discount = totalDiscount;
+                sale.Createat = currentTime;
+
+                _dbCDbContext.Add(sale);
+                sales.Add(sale);
             }
 
-            if (product.Stock < dto.Qty)
-            {
-                throw new InsufficientStockException("Estoque insuficiente para o produto: " + product.Description);
-            }
-
-            var promotions = _promotionService.GetActivePromotions(dto.Productid);
-
-
-            decimal unitPrice = product.Price;
-
-            foreach (var promotion in promotions)
-            {
-                unitPrice = ApplyPromotion(unitPrice, promotion);
-            }
-
-            decimal totalPrice = unitPrice * dto.Qty;
-
-            var entity = _mapper.Map<TbSale>(dto);
-
-            entity.Price = totalPrice;
-
-            product.Stock -= dto.Qty;
-
-            entity.Createat = DateTime.Now;
-
-            _dbCDbContext.Update(product);
-            _dbCDbContext.Add(entity);
             _dbCDbContext.SaveChanges();
 
-            _LogService.InsertLog(new StockLogDTO
-            {
-                Productid = entity.Productid,
-                Qty = -entity.Qty,
-                Createdat = DateTime.Now
-            });
-
-            return entity;
+            return sales;
         }
 
 
@@ -111,10 +131,14 @@ namespace API_TF.Services
 
         public List<SalesReportDTO> GetSalesReportByPeriod(DateTime startDate, DateTime endDate)
         {
-            var query = from sale in _dbCDbContext.TbSales
-                        join product in _dbCDbContext.TbProducts on sale.Productid equals product.Id
-                        where sale.Createat >= startDate && sale.Createat < endDate.AddDays(1)
-                        select new SalesReportDTO
+
+            if (startDate == default || endDate == default)
+            {
+                throw new BadRequestException("As datas de início e fim são obrigatórias.");
+            }
+
+            var query = from sale in _dbCDbContext.TbSales join product in _dbCDbContext.TbProducts on sale.Productid equals product.Id
+                        where sale.Createat >= startDate && sale.Createat < endDate.AddDays(1) select new SalesReportDTO
                         {
                             SaleCode = sale.Code,
                             ProductDescription = product.Description,

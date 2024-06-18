@@ -7,7 +7,9 @@ using AutoMapper;
 using FluentValidation;
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using InvalidDataException = API_TF.Services.Exceptions.InvalidDataException;
 
 namespace API_TF.Services
 {
@@ -15,16 +17,18 @@ namespace API_TF.Services
     {
         private readonly TfDbContext _dbCDbContext;
         private readonly ProductValidate _validator;
+        public readonly IValidator<ProductUpDTO> _validatorUpdateProduct;
         private readonly IMapper _mapper;
         private readonly LogService _LogService;
 
-        public ProductService(TfDbContext dbCDbContext, ProductValidate validator, IMapper mapper, LogService LogService)
+        public ProductService(TfDbContext dbCDbContext, IValidator<ProductUpDTO> validatorUpProduct, ProductValidate validator, IMapper mapper, LogService LogService)
         {
             _dbCDbContext = dbCDbContext;
             _validator = validator;
             _mapper = mapper;
             _LogService = LogService;
-        }
+            _validatorUpdateProduct = validatorUpProduct;
+    }
 
 
         public TbProduct Insert(ProductDTO dto)
@@ -95,6 +99,13 @@ namespace API_TF.Services
         {
 
             var product = GetById(id);
+
+            var validationResult = _validatorUpdateProduct.Validate(dto);
+
+            if (!validationResult.IsValid)
+            {
+                throw new InvalidDataException("Dados inválidos", validationResult.Errors);
+            }
 
             int oldStock = product.Stock;
 
